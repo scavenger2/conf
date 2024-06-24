@@ -1,5 +1,9 @@
 :mapclear
 source ~/.vimrc
 set surround
-
 set easymotion
+
+set ideajoin
+set ideamarks
+set trackactionids
+set keep-english-in-normal-and-restore-in-insert
