@@ -31,6 +31,12 @@
       "provideFunctionalityList": true,
       "triggerCondition": "多次嘗試但無法順利處理文本時",
       "purpose": "為下次互動提供更清晰的需求"
+    },
+    "conversationManagement": {
+      "summarizeWhenLengthy": true,
+      "suggestNewConversation": true,
+      "askForMemoryNotes": true,
+      "purpose": "保持對話效率並確保重要信息在新對話中保留"
     }
   }
 }
