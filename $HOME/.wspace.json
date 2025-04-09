@@ -1,0 +1,36 @@
+{
+  "userPreferences": {
+    "user": "default_user",
+    "communication": {
+      "language": "中文"
+    },
+    "persistencePath": "/Users/dean.sung/projects/.wspace.json",
+    "projects": [
+      "Cursor", "api-backend", "desktop-lic-web", "e2e-wspace", 
+      "endless-api", "help", "newmobile", "nf-b2b-api", "nf-b2b-cricket-web", 
+      "nf-b2b-web", "package-noahsark", "service-licensee-api", 
+      "service-theone-common-api", "sportsbook-web-monorepo", 
+      "themebuilder-component", "w-site-web", "wap", "web2"
+    ],
+    "ignoredProjects": [
+      "conf", "plantUml", "planturltrial", "self-hosted-ai-starter-kit"
+    ],
+    "searchPreference": {
+      "prepareBeforeSearch": true,
+      "searchPlanFormat": [
+        "1. 明確可使用的搜尋目標",
+        "2. 搜尋的範圍，如果太大或甚至不知道有多大都可以先說",
+        "3. 搜尋的計劃",
+        "4. 期待的搜尋結果格式"
+      ],
+      "waitForApproval": true,
+      "reason": "避免花太多時間做無效的嘗試"
+    },
+    "troubleshootingPreference": {
+      "providePermissionList": true,
+      "provideFunctionalityList": true,
+      "triggerCondition": "多次嘗試但無法順利處理文本時",
+      "purpose": "為下次互動提供更清晰的需求"
+    }
+  }
+}
