@@ -9,5 +9,6 @@ set trackactionids
 set keep-english-in-normal-and-restore-in-insert
 
 :nmap \pin <Action>(PinActiveEditorTab)
+:nmap \cap <Action>(CopyAbsolutePath)
 :nmap <C-S-j> <Action>(MethodDown)
 :nmap <C-S-k> <Action>(MethodUp)
