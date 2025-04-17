@@ -1,0 +1,40 @@
+{
+  "recentFiles": [
+    {
+      "basename": "AccountMasterPage.cshtml",
+      "path": "web2/front-end/MemberWeb/MemberWebCore/Views/Shared/AccountMasterPage.cshtml.md"
+    },
+    {
+      "basename": "AccountMasterPage.cshtml",
+      "path": "web2/front-end/MemberWeb/MemberWeb/Views/Shared/AccountMasterPage.cshtml.md"
+    },
+    {
+      "basename": "Messages.tsx",
+      "path": "web2/front-end/WidgetDev/web/lib/Component/Header/Messages.tsx.md"
+    },
+    {
+      "basename": "README",
+      "path": "features/messages/README.md"
+    },
+    {
+      "basename": "Welcome",
+      "path": "Welcome.md"
+    },
+    {
+      "basename": "create a link",
+      "path": "create a link.md"
+    },
+    {
+      "basename": "Untitled",
+      "path": "Untitled.md"
+    },
+    {
+      "basename": "Drawing 2025-04-17 17.48.18.excalidraw",
+      "path": "Excalidraw/Drawing 2025-04-17 17.48.18.excalidraw.md"
+    }
+  ],
+  "omittedPaths": [],
+  "omittedTags": [],
+  "updateOn": "file-open",
+  "omitBookmarks": false
+}
