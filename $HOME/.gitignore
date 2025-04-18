@@ -1,4 +1,5 @@
 # JetBrains
 .idea
 .DS_Store
+.obsidian
 .specstory
