@@ -5,7 +5,8 @@
       "args": [
         "-y",
         "@modelcontextprotocol/server-filesystem",
-        "/Users/dean.sung/projects"
+        "/Users/dean.sung/projects",
+        "/Users/dean.sung/codebase"
       ]
     },
     "sequential-thinking": {
