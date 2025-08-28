@@ -53,13 +53,15 @@ fi
 
 # 檢查是否有超過一個 '_' 在 JIRA_INFO 之後
 SUBSTRING=${FEATURE_BRANCH_NAME#*${JIRA_INFO}_}
+# === 新增：將完整的 namespace 加入 deploy 分支名稱 ===
+NAMESPACE="${FEATURE_BRANCH_NAME%/${JIRA_INFO}*}"
 if [[ "$SUBSTRING" == *_* ]]; then
     # 提取第一個和第二個 '_' 之間的內容作為 ENV
     ENV=${SUBSTRING%%_*}
-    DEPLOY_BRANCH_NAME="${JIRA_INFO}_deploy_${ENV}"
+    DEPLOY_BRANCH_NAME="${NAMESPACE}/${JIRA_INFO}_deploy_${ENV}"
 else
     # 如果只有一個 '_' 或沒有，則 ENV 為空
-    DEPLOY_BRANCH_NAME="${JIRA_INFO}_deploy"
+    DEPLOY_BRANCH_NAME="${NAMESPACE}/${JIRA_INFO}_deploy"
 fi
 
 echo "=> 準備建立的分支名稱為: $FEATURE_BRANCH_NAME 和 $DEPLOY_BRANCH_NAME"
