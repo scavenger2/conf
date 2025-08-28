@@ -5,18 +5,16 @@ set -e
 
 # 腳本使用說明
 if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ -z "$1" ]; then
-    echo "用法: $0 <repo_path> [base_branch] [deploy_branch_suffix]"
+    echo "用法: $0 <repo_path>"
     echo ""
-    echo "  <repo_path>             : 必填，現有 Git 專案資料夾的路徑。"
-    echo "  [base_branch]           : 選填，作為新分支基礎的分支。預設: develop。"
-    echo "  [deploy_branch_suffix]  : 選填，用於 deploy 分支名稱的後綴。預設: (空字串)。"
+    echo "  <repo_path>     : 必填，現有 Git 專案資料夾的路徑。"
+    echo "  [base_branch]   : 選填，作為新分支基礎的分支。預設: develop。"
     exit 1
 fi
 
 # 參數處理
 REPO_PATH="$1"
 BASE_BRANCH=${2:-develop}
-DEPLOY_BRANCH_SUFFIX=${3:-}
 
 # 自動找到主儲存庫的路徑
 MAIN_REPO_PATH=$(git -C "$REPO_PATH" rev-parse --show-toplevel)
@@ -30,71 +28,69 @@ echo "--- 開始建立新的工作環境 ---"
 cd "$MAIN_REPO_PATH"
 
 # 提示使用者輸入新的 feature 分支名稱
-read "?請輸入新的 feature 分支名稱 (例如: Forerunner/feature/FOR-123-bugfix): " FEATURE_BRANCH_NAME
+read "?請輸入新的 feature 分支名稱 (例如: Forerunner/feature/FOR-123_bugfix_test_env): " FEATURE_BRANCH_NAME
 if [ -z "$FEATURE_BRANCH_NAME" ]; then
     echo "錯誤: 分支名稱不能為空。"
     exit 1
 fi
 
-# 1. 取得 feature branch 的最後一個部分，作為 worktree 路徑
-SANITIZED_BRANCH_NAME=$(basename "$FEATURE_BRANCH_NAME")
-echo "=> 建立 worktree 的路徑名稱為: $SANITIZED_BRANCH_NAME"
+# 1. 根據 feature 分支名稱推斷 worktree 路徑
+SANITIZED_BRANCH_PATH_TAIL=${FEATURE_BRANCH_NAME:t}
+SANITIZED_BRANCH_PATH_HEAD=${FEATURE_BRANCH_NAME:h}
 
-# 2. 處理 deploy branch 名稱的邏輯
+FEATURE_WORKTREE_PATH="$HOME/worktrees/$SANITIZED_BRANCH_PATH_TAIL"
+
+echo "=> 建立 worktree 的路徑名稱為: $FEATURE_WORKTREE_PATH"
+
+# 2. 根據 feature 分支名稱推斷 deploy 分支名稱
+# 從分支名稱中提取 JIRA_INFO (例如: FOR-123)
 if [[ "$FEATURE_BRANCH_NAME" =~ (FOR-[0-9]+) ]]; then
     JIRA_INFO="${match[1]}"
 else
-    echo "警告: 無法從 feature branch 名稱中找到 'FOR-xxxx' 資訊。"
-    JIRA_INFO=""
+    echo "錯誤: 無法從 feature branch 名稱中找到 'FOR-xxxx' 資訊。"
+    exit 1
 fi
 
-DEPLOY_PARTS=("deploy")
-if [ -n "$DEPLOY_BRANCH_SUFFIX" ]; then
-    DEPLOY_PARTS+=("$DEPLOY_BRANCH_SUFFIX")
+# 檢查是否有超過一個 '_' 在 JIRA_INFO 之後
+SUBSTRING=${FEATURE_BRANCH_NAME#*${JIRA_INFO}_}
+if [[ "$SUBSTRING" == *_* ]]; then
+    # 提取第一個和第二個 '_' 之間的內容作為 ENV
+    ENV=${SUBSTRING%%_*}
+    DEPLOY_BRANCH_NAME="${JIRA_INFO}_deploy_${ENV}"
+else
+    # 如果只有一個 '_' 或沒有，則 ENV 為空
+    DEPLOY_BRANCH_NAME="${JIRA_INFO}_deploy"
 fi
-
-DEPLOY_SUFFIX=$(printf -- '-%s' "${DEPLOY_PARTS[@]}")
-DEPLOY_SUFFIX=${DEPLOY_SUFFIX#-}
-
-DEPLOY_BRANCH_NAME="${JIRA_INFO}_${DEPLOY_SUFFIX}"
 
 echo "=> 準備建立的分支名稱為: $FEATURE_BRANCH_NAME 和 $DEPLOY_BRANCH_NAME"
-echo "=> 基礎分支為: $BASE_BRANCH"
+echo "=> 基礎分支為: develop" # 假設基礎分支為 develop
 echo ""
 
 # 建立 worktree 資料夾
-WORKTREES_DIR="$HOME/worktrees"
-mkdir -p "$WORKTREES_DIR"
+mkdir -p $(dirname "$FEATURE_WORKTREE_PATH")
 
 # 建立 feature branch 的 worktree
-FEATURE_WORKTREE_PATH="$WORKTREES_DIR/$SANITIZED_BRANCH_NAME"
 git worktree add -b "$FEATURE_BRANCH_NAME" "$FEATURE_WORKTREE_PATH" "$BASE_BRANCH"
 echo "✅ Feature worktree 建立於: $FEATURE_WORKTREE_PATH"
 
 # 建立 deploy branch 的 worktree
-DEPLOY_WORKTREE_PATH="$WORKTREES_DIR/$DEPLOY_BRANCH_NAME"
-git worktree add -b "${FEATURE_BRANCH_NAME:h}/$DEPLOY_BRANCH_NAME" "$DEPLOY_WORKTREE_PATH" "$BASE_BRANCH"
+DEPLOY_WORKTREE_PATH="$HOME/worktrees/$DEPLOY_BRANCH_NAME"
+git worktree add -b "$DEPLOY_BRANCH_NAME" "$DEPLOY_WORKTREE_PATH" "$BASE_BRANCH"
 echo "✅ Deploy worktree 建立於: $DEPLOY_WORKTREE_PATH"
 echo ""
 
 # 設定 Git hooks
 echo "--- 正在為 worktree 建立 hooks 的 symbolic links ---"
-GIT_HOOKS_DIR="$MAIN_REPO_PATH/githooks"
+GIT_HOOKS_DIR="$HOME/projects/conf/workflow"
 
-# === 修正部分：正確處理 worktree 的 hooks 資料夾 ===
-# 為 feature worktree 建立 hooks (只需要 post-commit)
+# 為 feature worktree 建立 hooks
 cd "$FEATURE_WORKTREE_PATH"
-# git rev-parse --git-common-dir
-mkdir -p $(git rev-parse --git-common-dir)/hooks # 修正後的指令
-ln -s "$GIT_HOOKS_DIR/post-commit" $(git rev-parse --git-common-dir)/hooks/post-commit
+mkdir -p "$(git rev-parse --git-dir)/hooks"
+ln -s "$GIT_HOOKS_DIR/sync_and_trigger.sh" "$(git rev-parse --git-dir)/hooks/post-commit"
 echo "✅ Feature worktree 的 hooks 連結已建立。"
-
-# === 修正部分結束 ===
-
-# === 修正部分：移除多餘的 deploy branch hook 設定 ===
+git config core.hooksPath "$(git rev-parse --git-dir)/hooks"
 echo "✅ Deploy worktree 的 hooks 連結已建立。"
 echo ""
-# === 修正部分結束 ===
 
 echo "--- 環境設定完成！ ---"
 echo "您現在可以進入您的新工作目錄開始工作："
