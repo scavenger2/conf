@@ -65,7 +65,7 @@ else
 fi
 
 echo "=> 準備建立的分支名稱為: $FEATURE_BRANCH_NAME 和 $DEPLOY_BRANCH_NAME"
-echo "=> 基礎分支為: develop" # 假設基礎分支為 develop
+echo "=> 基礎分支為: $BASE_BRANCH" # 假設基礎分支為 develop
 echo ""
 
 # 建立 worktree 資料夾
@@ -76,22 +76,17 @@ git worktree add -b "$FEATURE_BRANCH_NAME" "$FEATURE_WORKTREE_PATH" "$BASE_BRANC
 echo "✅ Feature worktree 建立於: $FEATURE_WORKTREE_PATH"
 
 # 建立 deploy branch 的 worktree
-DEPLOY_WORKTREE_PATH="$HOME/worktrees/$DEPLOY_BRANCH_NAME"
-git worktree add -b "$DEPLOY_BRANCH_NAME" "$DEPLOY_WORKTREE_PATH" "$BASE_BRANCH"
+DEPLOY_WORKTREE_PATH="$HOME/worktrees/${DEPLOY_BRANCH_NAME:t}"
+git worktree add -b "$DEPLOY_BRANCH_NAME" "$DEPLOY_WORKTREE_PATH" "$FEATURE_BRANCH_NAME"
 echo "✅ Deploy worktree 建立於: $DEPLOY_WORKTREE_PATH"
 echo ""
 
-# 設定 Git hooks
-echo "--- 正在為 worktree 建立 hooks 的 symbolic links ---"
-GIT_HOOKS_DIR="$HOME/projects/conf/workflow"
-
-# 為 feature worktree 建立 hooks
+# 只為 feature worktree 建立 hooks
 cd "$FEATURE_WORKTREE_PATH"
 mkdir -p "$(git rev-parse --git-dir)/hooks"
 ln -s "$GIT_HOOKS_DIR/sync_and_trigger.sh" "$(git rev-parse --git-dir)/hooks/post-commit"
-echo "✅ Feature worktree 的 hooks 連結已建立。"
 git config core.hooksPath "$(git rev-parse --git-dir)/hooks"
-echo "✅ Deploy worktree 的 hooks 連結已建立。"
+echo "✅ Feature worktree 的 hooks 連結已建立。"
 echo ""
 
 echo "--- 環境設定完成！ ---"

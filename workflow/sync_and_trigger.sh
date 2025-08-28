@@ -21,20 +21,17 @@ MAIN_REPO_PATH=$(git rev-parse --show-toplevel)
 
 # 根據 feature 分支名稱推斷 deploy 分支名稱
 SUBSTRING=${CURRENT_BRANCH_NAME#*${JIRA_INFO}_}
-# === 新增：將完整的 namespace 加入 deploy 分支名稱 ===
 NAMESPACE="${CURRENT_BRANCH_NAME%/${JIRA_INFO}*}"
 if [[ "$SUBSTRING" == *_* ]]; then
     ENV=${SUBSTRING%%_*}
     DEPLOY_BRANCH_NAME="${NAMESPACE}/${JIRA_INFO}_deploy_${ENV}"
 else
-    # 如果只有一個 '_' 或沒有，則 ENV 為空
     DEPLOY_BRANCH_NAME="${NAMESPACE}/${JIRA_INFO}_deploy"
 fi
 
 # 獲取 deploy worktree 的路徑
 WORKTREES_DIR="$HOME/worktrees"
-# === 修正：使用完整的 deploy 分支名稱來推斷 worktree 路徑 ===
-DEPLOY_WORKTREE_PATH="$WORKTREES_DIR/$DEPLOY_BRANCH_NAME"
+DEPLOY_WORKTREE_PATH="$WORKTREES_DIR/${DEPLOY_BRANCH_NAME:t}"
 
 # 進入 deploy worktree 並進行同步
 cd "$DEPLOY_WORKTREE_PATH"
@@ -43,12 +40,11 @@ if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     exit 1
 fi
 
-# 合併 feature 分支的最新變更
-git merge --no-edit --no-ff "$MAIN_REPO_PATH/$CURRENT_BRANCH_NAME"
+# === 移除 git merge 步驟，直接推送 feature 的 HEAD ===
 echo "✅ 變更已同步到 $DEPLOY_BRANCH_NAME。"
 
 # 執行 push，觸發 CI/CD
 echo "🚀 正在推送至遠端，觸發 CI/CD..."
-git push origin "$DEPLOY_BRANCH_NAME"
+git push origin "$CURRENT_BRANCH_NAME:$DEPLOY_BRANCH_NAME"
 
 echo "--- CI/CD 觸發已完成。 ---"
