@@ -39,12 +39,28 @@ if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     echo "錯誤: 找不到 deploy worktree資料夾($DEPLOY_WORKTREE_PATH) 或它不是一個有效的 Git worktree，請先執行 create_feature_env.sh。"
     exit 1
 fi
+echo "Deploy branch name: $DEPLOY_BRANCH_NAME, path: $DEPLOY_WORKTREE_PATH"
 
-# === 移除 git merge 步驟，直接推送 feature 的 HEAD ===
-echo "✅ 變更已同步到 $DEPLOY_BRANCH_NAME。"
+# --- 核心邏輯修正：合併變更並推送到遠端 ---
+# 先從遠端拉取最新變更，確保本地 deploy 分支是最新的
+echo "🔄 正在從遠端拉取最新變更..."
+git pull --ff-only
 
-# 執行 push，觸發 CI/CD
-echo "🚀 正在推送至遠端，觸發 CI/CD..."
-git push origin "$CURRENT_BRANCH_NAME:$DEPLOY_BRANCH_NAME"
+# 合併 feature 分支的最新變更
+# 這裡使用 --no-ff 來確保每次合併都產生一個新的 commit
+echo "➡️ 正在合併 feature 分支的變更..."
+git merge --no-edit --no-ff "$CURRENT_BRANCH_NAME"
+echo "✅ 變更已合併到 $DEPLOY_BRANCH_NAME。"
+
+# 檢查上游追蹤是否已設定，如果沒有，則在推送後設定
+UPSTREAM_BRANCH=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null || true)
+echo "UPSTREAM_BRANCH=${UPSTREAM_BRANCH}"
+if [ -z "$UPSTREAM_BRANCH" ]; then
+    echo "🚀 正在推送至遠端並建立追蹤，觸發 CI/CD..."
+    git push -u origin "$DEPLOY_BRANCH_NAME"
+else
+    echo "🚀 正在推送至遠端，觸發 CI/CD..."
+    git push
+fi
 
 echo "--- CI/CD 觸發已完成。 ---"

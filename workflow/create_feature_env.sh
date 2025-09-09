@@ -82,6 +82,9 @@ echo "✅ Deploy worktree 建立於: $DEPLOY_WORKTREE_PATH"
 echo ""
 
 # 只為 feature worktree 建立 hooks
+GIT_HOOKS_DIR="$HOME/projects/conf/workflow" # 確保此路徑正確
+echo "--- 正在為 worktree 建立 hooks 的 symbolic links ---"
+
 cd "$FEATURE_WORKTREE_PATH"
 mkdir -p "$(git rev-parse --git-dir)/hooks"
 ln -s "$GIT_HOOKS_DIR/sync_and_trigger.sh" "$(git rev-parse --git-dir)/hooks/post-commit"
