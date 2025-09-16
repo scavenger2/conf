@@ -1,0 +1,6 @@
+# .gitignore
+CLAUDE.local.md
+workflow/.claude/settings.local.json
+workflow/.claude/*.local.*
+workflow/.claude/cache/
+workflow/.claude/logs/
