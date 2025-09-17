@@ -88,3 +88,4 @@ The system automatically creates a post-commit hook that runs `sync_and_trigger.
 - 如果我寫feature worktree path就表示我要說的是feature branch的worktree資料夾位址；同理deploy worktree path就是deploy branch的worktree資料夾位址
 - sync_and_trigger.sh這個腳本是用來設定成feature branch的post-commit git hook，我記得在create_feature_env.sh中已經完成了這個設定，當初遇到的難點是"worktree資料夾下只有.git檔案、沒有.git資料夾，所以要回到repo底下做設定"
 - sync_and_trigger.sh的設計理念是"feature branch如果有在local commit新的內容、應該會觸發相對應的deploy branch馬上將新的內容merge進去"
+- finalize_feature_env.sh的使用時機是deploy branch在透過CI/CD佈署到真實環境後、人為判斷功能已經實作完成後，會使用這個腳本將deploy branch從本地和遠端刪除，並且替feature branch設定好正確的upstream(和本地的branch一致即可、需要包含當初在create_feature_env.sh輸入的完整Namespace)方便它git push觸發CI/CD，之後若還有功能上的commit就視為fix

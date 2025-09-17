@@ -17,10 +17,17 @@ fi
 echo "--- 正在同步 $CURRENT_BRANCH_NAME 到 deploy 分支並觸發 CI/CD ---"
 
 # 根據 feature 分支名稱推斷 deploy 分支名稱
-SUBSTRING=${CURRENT_BRANCH_NAME#*${JIRA_INFO}_}
-NAMESPACE="${CURRENT_BRANCH_NAME%/${JIRA_INFO}*}"
-if [[ "$SUBSTRING" == *_* ]]; then
-    ENV=${SUBSTRING%%_*}
+# 從 feature branch 名稱中提取 namespace 部分 (例如: Forerunner/feature)
+NAMESPACE="${CURRENT_BRANCH_NAME%/*${JIRA_INFO}*}"
+
+# 從 feature branch 名稱中提取 JIRA_INFO 之後的部分
+AFTER_JIRA=${CURRENT_BRANCH_NAME#*${JIRA_INFO}_}
+
+# 檢查是否有環境後綴 (例如: domain-detector_test_env -> test)
+if [[ "$AFTER_JIRA" == *_*_env ]]; then
+    # 提取環境名稱 (最後一個 _ 之前的部分)
+    ENV=${AFTER_JIRA%_env}
+    ENV=${ENV##*_}
     DEPLOY_BRANCH_NAME="${NAMESPACE}/${JIRA_INFO}_deploy_${ENV}"
 else
     DEPLOY_BRANCH_NAME="${NAMESPACE}/${JIRA_INFO}_deploy"
@@ -44,9 +51,17 @@ cd "$DEPLOY_WORKTREE_PATH"
 
 # 檢查是否為正確的 deploy branch
 CURRENT_DEPLOY_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
 if [ "$CURRENT_DEPLOY_BRANCH" != "$DEPLOY_BRANCH_NAME" ]; then
-    echo "錯誤: Deploy worktree 的分支不符 (期待: $DEPLOY_BRANCH_NAME, 實際: $CURRENT_DEPLOY_BRANCH)"
-    exit 1
+    echo "⚠️  調整 deploy worktree 分支狀態..."
+    # 使用 git symbolic-ref 直接設定 HEAD
+    git symbolic-ref HEAD "refs/heads/$DEPLOY_BRANCH_NAME"
+    CURRENT_DEPLOY_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+    if [ "$CURRENT_DEPLOY_BRANCH" != "$DEPLOY_BRANCH_NAME" ]; then
+        echo "錯誤: 無法設定正確的 deploy branch (期待: $DEPLOY_BRANCH_NAME, 實際: $CURRENT_DEPLOY_BRANCH)"
+        exit 1
+    fi
 fi
 
 # 步驟一：將 feature branch 的最新變更 merge 到 deploy branch
