@@ -46,20 +46,15 @@ MAIN_REPO_PATH="/Users/dean.sung/projects/web2"
 echo "=> 使用主儲存庫路徑: $MAIN_REPO_PATH"
 cd "$MAIN_REPO_PATH"
 
-# 3. 刪除 worktrees
-if [ -n "$FEATURE_WORKTREE_PATH" ] && git worktree list | grep -q "$FEATURE_WORKTREE_PATH"; then
-    git worktree remove "$FEATURE_WORKTREE_PATH" --force
-    echo "✅ Feature worktree 已刪除。"
-else
-    echo "⚠️ Feature worktree 不存在，跳過刪除。"
-fi
-
+# 3. 只刪除 deploy worktree (feature worktree 要保留)
 if git worktree list | grep -q "$DEPLOY_WORKTREE_PATH"; then
     git worktree remove "$DEPLOY_WORKTREE_PATH" --force
     echo "✅ Deploy worktree 已刪除。"
 else
     echo "⚠️ Deploy worktree 不存在，跳過刪除。"
 fi
+
+echo "=> Feature worktree 保留在: $FEATURE_WORKTREE_PATH"
 
 # 4. 為 feature branch 設定正確的 upstream 並推送
 echo "--- 為 feature branch 設定 upstream ---"
