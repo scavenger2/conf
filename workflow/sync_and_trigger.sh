@@ -53,25 +53,58 @@ cd "$DEPLOY_WORKTREE_PATH"
 CURRENT_DEPLOY_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
 if [ "$CURRENT_DEPLOY_BRANCH" != "$DEPLOY_BRANCH_NAME" ]; then
-    echo "⚠️  調整 deploy worktree 分支狀態..."
-    # 使用 git symbolic-ref 直接設定 HEAD
-    git symbolic-ref HEAD "refs/heads/$DEPLOY_BRANCH_NAME"
-    CURRENT_DEPLOY_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    echo "⚠️  需要切換到正確的 deploy branch..."
 
+    # 檢查是否有未提交的變更
+    if ! git diff-index --quiet HEAD 2>/dev/null; then
+        echo "錯誤: Deploy worktree 有未提交的變更，無法切換分支"
+        echo "請先在 deploy worktree 中提交或重置變更"
+        exit 1
+    fi
+
+    # 使用安全的 checkout 方式切換分支
+    if git checkout "$DEPLOY_BRANCH_NAME" 2>/dev/null; then
+        echo "✅ 已切換到 deploy branch: $DEPLOY_BRANCH_NAME"
+    else
+        echo "錯誤: 無法切換到 deploy branch: $DEPLOY_BRANCH_NAME"
+        echo "請檢查 deploy branch 是否存在"
+        exit 1
+    fi
+
+    # 再次確認當前分支
+    CURRENT_DEPLOY_BRANCH=$(git rev-parse --abbrev-ref HEAD)
     if [ "$CURRENT_DEPLOY_BRANCH" != "$DEPLOY_BRANCH_NAME" ]; then
-        echo "錯誤: 無法設定正確的 deploy branch (期待: $DEPLOY_BRANCH_NAME, 實際: $CURRENT_DEPLOY_BRANCH)"
+        echo "錯誤: 分支切換失敗 (期待: $DEPLOY_BRANCH_NAME, 實際: $CURRENT_DEPLOY_BRANCH)"
         exit 1
     fi
 fi
 
 # 步驟一：將 feature branch 的最新變更 merge 到 deploy branch
 echo "🔀 正在將 $CURRENT_BRANCH_NAME 的變更 merge 到 $DEPLOY_BRANCH_NAME..."
-git merge "$CURRENT_BRANCH_NAME" --no-edit
+
+# 檢查 feature branch 是否存在
+if ! git show-ref --verify --quiet "refs/heads/$CURRENT_BRANCH_NAME"; then
+    echo "錯誤: Feature branch '$CURRENT_BRANCH_NAME' 不存在"
+    exit 1
+fi
+
+# 執行 merge 並檢查結果
+if git merge "$CURRENT_BRANCH_NAME" --no-edit; then
+    echo "✅ Merge 成功"
+else
+    echo "❌ Merge 失敗，可能有衝突需要手動解決"
+    exit 1
+fi
 
 # 步驟二：推送 deploy branch 到遠端觸發 CI/CD
 echo "🚀 正在推送 deploy branch 到遠端觸發 CI/CD..."
-git push origin "$DEPLOY_BRANCH_NAME"
 
-echo "✅ Deploy branch 已更新並推送到遠端。"
-echo "✅ CI/CD 已觸發。"
+if git push origin "$DEPLOY_BRANCH_NAME"; then
+    echo "✅ Deploy branch 已更新並推送到遠端"
+    echo "✅ CI/CD 已觸發"
+else
+    echo "❌ 推送失敗，請檢查網路連線或權限設定"
+    exit 1
+fi
+
 echo "--- 同步完成 ---"

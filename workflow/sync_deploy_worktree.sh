@@ -4,17 +4,23 @@
 set -e
 
 # 腳本使用說明
-if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ -z "$1" ]; then
-    echo "用法: $0 <deploy_worktree_path>"
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    echo "用法: $0 [deploy_worktree_path]"
     echo ""
-    echo "  <deploy_worktree_path>  : 必填，deploy branch 的 worktree 資料夾路徑。"
+    echo "  [deploy_worktree_path]  : 選填，deploy branch 的 worktree 資料夾路徑。"
+    echo "                           如不提供，則使用當前工作目錄（適合作為 git hook）"
     echo ""
     echo "功能: 將 deploy branch 與對應的 feature branch 及其 base branch 進行三方同步"
     exit 1
 fi
 
 # 參數處理
-DEPLOY_WORKTREE_PATH="$1"
+if [ -n "$1" ]; then
+    DEPLOY_WORKTREE_PATH="$1"
+else
+    # 作為 git hook 時，使用當前工作目錄
+    DEPLOY_WORKTREE_PATH="$(pwd)"
+fi
 
 # 檢查路徑是否存在且為有效的 Git worktree
 if [ ! -d "$DEPLOY_WORKTREE_PATH" ] || [ ! -d "$DEPLOY_WORKTREE_PATH/.git" ]; then
@@ -102,10 +108,21 @@ git merge "$FEATURE_BRANCH_NAME" --no-edit
 echo "🔀 正在合併 base branch: origin/$BASE_BRANCH"
 git merge "origin/$BASE_BRANCH" --no-edit
 
+# 步驟 4: 推送 deploy branch 到遠端觸發 CI/CD
+echo "🚀 正在推送 deploy branch 到遠端觸發 CI/CD..."
+
+if git push origin "$DEPLOY_BRANCH_NAME"; then
+    echo "✅ Deploy branch 已推送到遠端"
+    echo "✅ CI/CD 已觸發"
+else
+    echo "❌ 推送失敗，請檢查網路連線或權限設定"
+    exit 1
+fi
+
 echo ""
 echo "✅ 三方同步完成！"
 echo "Deploy branch 已包含："
 echo "  - Feature branch ($FEATURE_BRANCH_NAME) 的最新變更"
 echo "  - Base branch (origin/$BASE_BRANCH) 的最新變更"
 echo ""
-echo "--- 同步完成 ---"
+echo "--- 同步並推送完成 ---"

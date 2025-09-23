@@ -92,15 +92,23 @@ git config branch."$DEPLOY_BRANCH_NAME".featureworktree "$FEATURE_WORKTREE_PATH"
 echo "✅ Deploy branch 關聯資訊已記錄"
 echo ""
 
-# 只為 feature worktree 建立 hooks
+# 為兩個 worktree 建立 hooks
 GIT_HOOKS_DIR="$HOME/projects/conf/workflow" # 確保此路徑正確
 echo "--- 正在為 worktree 建立 hooks 的 symbolic links ---"
 
+# 為 feature worktree 建立 post-commit hook
 cd "$FEATURE_WORKTREE_PATH"
 mkdir -p "$(git rev-parse --git-dir)/hooks"
 ln -s "$GIT_HOOKS_DIR/sync_and_trigger.sh" "$(git rev-parse --git-dir)/hooks/post-commit"
 git config core.hooksPath "$(git rev-parse --git-dir)/hooks"
-echo "✅ Feature worktree 的 hooks 連結已建立。"
+echo "✅ Feature worktree 的 hooks 連結已建立 (sync_and_trigger.sh)"
+
+# 為 deploy worktree 建立 post-commit hook
+cd "$DEPLOY_WORKTREE_PATH"
+mkdir -p "$(git rev-parse --git-dir)/hooks"
+ln -s "$GIT_HOOKS_DIR/sync_deploy_worktree.sh" "$(git rev-parse --git-dir)/hooks/post-commit"
+git config core.hooksPath "$(git rev-parse --git-dir)/hooks"
+echo "✅ Deploy worktree 的 hooks 連結已建立 (sync_deploy_worktree.sh)"
 echo ""
 
 echo "--- 環境設定完成！ ---"
