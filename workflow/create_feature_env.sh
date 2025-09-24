@@ -75,10 +75,14 @@ mkdir -p $(dirname "$FEATURE_WORKTREE_PATH")
 git worktree add -b "$FEATURE_BRANCH_NAME" "$FEATURE_WORKTREE_PATH" "$BASE_BRANCH"
 echo "✅ Feature worktree 建立於: $FEATURE_WORKTREE_PATH"
 
-# 設定 feature branch 的 upstream
+# 記錄 feature branch 的 base branch 資訊 (不使用 upstream，改用 git config)
 cd "$FEATURE_WORKTREE_PATH"
-git branch --set-upstream-to=origin/"$BASE_BRANCH"
-echo "✅ Feature branch upstream 已設定為: origin/$BASE_BRANCH"
+git config branch."$FEATURE_BRANCH_NAME".basebranch "$BASE_BRANCH"
+echo "✅ Feature branch base branch 已記錄為: $BASE_BRANCH"
+
+# 推送 feature branch 到遠端並設定正確的 upstream
+git push -u origin "$FEATURE_BRANCH_NAME"
+echo "✅ Feature branch upstream 已設定為: origin/$FEATURE_BRANCH_NAME"
 
 # 建立 deploy branch 的 worktree
 DEPLOY_WORKTREE_PATH="$HOME/worktrees/${DEPLOY_BRANCH_NAME:t}"

@@ -54,17 +54,15 @@ if [ ! -d "$FEATURE_WORKTREE_PATH" ]; then
     exit 1
 fi
 
-# 獲取 feature branch 的 base branch (upstream)
+# 獲取 feature branch 的 base branch (從 git config 讀取)
 cd "$FEATURE_WORKTREE_PATH"
-FEATURE_UPSTREAM=$(git rev-parse --abbrev-ref @{u} 2>/dev/null || echo "")
+BASE_BRANCH=$(git config branch."$FEATURE_BRANCH_NAME".basebranch 2>/dev/null || echo "")
 
-if [ -z "$FEATURE_UPSTREAM" ]; then
-    echo "錯誤: 無法找到 feature branch 的 upstream。"
+if [ -z "$BASE_BRANCH" ]; then
+    echo "錯誤: 無法找到 feature branch 的 base branch 資訊。"
+    echo "請確認此 feature worktree 是由新版的 create_feature_env.sh 建立的。"
     exit 1
 fi
-
-# 提取 base branch 名稱 (移除 origin/ 前綴)
-BASE_BRANCH="${FEATURE_UPSTREAM#origin/}"
 echo "=> Feature branch 的 base branch: $BASE_BRANCH"
 
 # 回到 deploy worktree 進行同步
