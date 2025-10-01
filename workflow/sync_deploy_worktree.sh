@@ -23,7 +23,7 @@ else
 fi
 
 # 檢查路徑是否存在且為有效的 Git worktree
-if [ ! -d "$DEPLOY_WORKTREE_PATH" ] || [ ! -d "$DEPLOY_WORKTREE_PATH/.git" ]; then
+if [ ! -d "$DEPLOY_WORKTREE_PATH" ] || ! git -C "$DEPLOY_WORKTREE_PATH" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     echo "錯誤: 提供的路徑不是一個有效的 Git worktree。"
     exit 1
 fi
